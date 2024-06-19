@@ -15,6 +15,8 @@ public class MetricsHistogram {
         "class", "method");
     init(MetricKeys.Histogram.HTTP_SERVICE_LATENCY, "Http Service latency.",
         "url");
+    init(MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "Http Response Deserialize latency.",
+            "method");
     init(MetricKeys.Histogram.GRPC_SERVICE_LATENCY, "Grpc Service latency.",
         "endpoint");
     init(MetricKeys.Histogram.JSONRPC_SERVICE_LATENCY, "JsonRpc Service latency.",
