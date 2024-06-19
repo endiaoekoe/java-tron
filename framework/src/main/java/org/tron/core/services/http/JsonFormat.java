@@ -168,11 +168,12 @@ public class JsonFormat {
     try {
       StringBuilder text = new StringBuilder();
       print(message, text, selfType);
+      Metrics.histogramObserve(requestTimer);
       return text.toString();
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
-    Metrics.histogramObserve(requestTimer);
+
   }
 
   /**
@@ -184,11 +185,11 @@ public class JsonFormat {
     try {
       StringBuilder text = new StringBuilder();
       print(message, text, true);
+      Metrics.histogramObserve(requestTimer);
       return text.toString();
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
-    Metrics.histogramObserve(requestTimer);
   }
 
   /**
@@ -200,11 +201,11 @@ public class JsonFormat {
     try {
       StringBuilder text = new StringBuilder();
       print(fields, text, selfType);
+      Metrics.histogramObserve(requestTimer);
       return text.toString();
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
-    Metrics.histogramObserve(requestTimer);
   }
 
   /**
