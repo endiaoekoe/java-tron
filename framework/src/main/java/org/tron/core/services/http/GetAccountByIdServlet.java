@@ -4,9 +4,13 @@ import com.alibaba.fastjson.JSONObject;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Account;
 
@@ -46,6 +50,9 @@ public class GetAccountByIdServlet extends RateLimiterServlet {
   private void fillResponse(Account account, boolean visible, HttpServletResponse response)
       throws IOException {
     Account reply = wallet.getAccountById(account);
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetAccountById");
     Util.printAccount(reply, response, visible);
+    Metrics.histogramObserve(requestTimer);
   }
 }

@@ -3,10 +3,14 @@ package org.tron.core.services.http;
 import com.alibaba.fastjson.JSONObject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 
@@ -48,8 +52,10 @@ public class GetIncomingViewingKeyServlet extends RateLimiterServlet {
 
     GrpcAPI.IncomingViewingKeyMessage ivk = wallet
         .getIncomingViewingKey(ByteArray.fromHexString(ak), ByteArray.fromHexString(nk));
-
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetIncomingViewingKey");
     response.getWriter()
         .println(JsonFormat.printToString(ivk, visible));
+    Metrics.histogramObserve(requestTimer);
   }
 }

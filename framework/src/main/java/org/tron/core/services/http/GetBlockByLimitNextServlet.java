@@ -3,11 +3,15 @@ package org.tron.core.services.http;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BlockLimit;
 import org.tron.api.GrpcAPI.BlockList;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 
 
@@ -45,7 +49,10 @@ public class GetBlockByLimitNextServlet extends RateLimiterServlet {
     if (endNum > 0 && endNum > startNum && endNum - startNum <= BLOCK_LIMIT_NUM) {
       BlockList reply = wallet.getBlocksByLimitNext(startNum, endNum - startNum);
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetBlockByLimitNext");
         response.getWriter().println(Util.printBlockList(reply, visible));
+        Metrics.histogramObserve(requestTimer);
         return;
       }
     }

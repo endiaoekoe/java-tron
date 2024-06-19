@@ -54,7 +54,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.prometheus.client.Histogram;
 import org.apache.commons.lang3.StringUtils;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Commons;
 import org.tron.common.utils.StringUtil;
@@ -159,6 +163,8 @@ public class JsonFormat {
    * Like {@code print()}, but writes directly to a {@code String} and returns it.
    */
   public static String printToString(Message message, boolean selfType) {
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "printToString");
     try {
       StringBuilder text = new StringBuilder();
       print(message, text, selfType);
@@ -166,12 +172,15 @@ public class JsonFormat {
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
+    Metrics.histogramObserve(requestTimer);
   }
 
   /**
    * Like {@code print()}, but writes directly to a {@code String} and returns it.
    */
   public static String printToString(Message message) {
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "printToString");
     try {
       StringBuilder text = new StringBuilder();
       print(message, text, true);
@@ -179,12 +188,15 @@ public class JsonFormat {
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
+    Metrics.histogramObserve(requestTimer);
   }
 
   /**
    * Like {@code print()}, but writes directly to a {@code String} and returns it.
    */
   public static String printToString(UnknownFieldSet fields, boolean selfType) {
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "printToString");
     try {
       StringBuilder text = new StringBuilder();
       print(fields, text, selfType);
@@ -192,6 +204,7 @@ public class JsonFormat {
     } catch (IOException e) {
       throw new RuntimeException(WRITING_STRING_BUILDER_EXCEPTION, e);
     }
+    Metrics.histogramObserve(requestTimer);
   }
 
   /**

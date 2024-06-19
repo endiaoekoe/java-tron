@@ -2,10 +2,14 @@ package org.tron.core.services.http;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.TransactionApprovedList;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Transaction;
 
@@ -27,7 +31,10 @@ public class GetTransactionApprovedListServlet extends RateLimiterServlet {
       Transaction transaction = Util.packTransaction(params.getParams(), params.isVisible());
       TransactionApprovedList reply = wallet.getTransactionApprovedList(transaction);
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetTransactionApprovedList");
         response.getWriter().println(Util.printTransactionApprovedList(reply, params.isVisible()));
+        Metrics.histogramObserve(requestTimer);
       } else {
         response.getWriter().println("{}");
       }

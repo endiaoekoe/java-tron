@@ -5,10 +5,14 @@ import static org.tron.core.services.http.PostParams.S_VALUE;
 import com.alibaba.fastjson.JSONObject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.contract.SmartContractOuterClass.SmartContract;
 
@@ -65,9 +69,12 @@ public class GetContractServlet extends RateLimiterServlet {
       if (smartContract == null) {
         response.getWriter().println("{}");
       } else {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetContract");
         JSONObject jsonSmartContract = JSONObject
             .parseObject(JsonFormat.printToString(smartContract, visible));
         response.getWriter().println(jsonSmartContract.toJSONString());
+        Metrics.histogramObserve(requestTimer);
       }
     } catch (Exception e) {
       Util.processError(e, response);

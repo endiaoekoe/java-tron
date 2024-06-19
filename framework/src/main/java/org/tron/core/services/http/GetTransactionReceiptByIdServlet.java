@@ -3,10 +3,14 @@ package org.tron.core.services.http;
 import com.google.protobuf.ByteString;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.TransactionInfo;
@@ -45,9 +49,12 @@ public class GetTransactionReceiptByIdServlet extends RateLimiterServlet {
       TransactionInfo result = wallet.getTransactionInfoById(build.getValue());
 
       if (result != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetTransactionReceiptById");
         response.getWriter().println(
             Util.printTransactionFee(JsonFormat
                 .printToString(result, params.isVisible())));
+        Metrics.histogramObserve(requestTimer);
       } else {
         response.getWriter().println("{}");
       }

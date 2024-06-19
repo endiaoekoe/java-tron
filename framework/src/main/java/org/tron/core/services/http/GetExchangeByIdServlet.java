@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 
@@ -43,7 +47,10 @@ public class GetExchangeByIdServlet extends RateLimiterServlet {
 
   private void fillResponse(boolean visible, long id, HttpServletResponse response)
       throws IOException {
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetExchangeById");
     response.getWriter().println(JsonFormat.printToString(
         wallet.getExchangeById(ByteString.copyFrom(ByteArray.fromLong(id))), visible));
+    Metrics.histogramObserve(requestTimer);
   }
 }

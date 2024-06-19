@@ -2,9 +2,13 @@ package org.tron.core.services.http;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.contract.ShieldContract.IncrementalMerkleVoucherInfo;
 import org.tron.protos.contract.ShieldContract.OutputPointInfo;
@@ -28,7 +32,10 @@ public class GetMerkleTreeVoucherInfoServlet extends RateLimiterServlet {
       JsonFormat.merge(params.getParams(), build);
       IncrementalMerkleVoucherInfo reply = wallet.getMerkleTreeVoucherInfo(build.build());
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetMerkleTreeVoucherInfo");
         response.getWriter().println(JsonFormat.printToString(reply, params.isVisible()));
+        Metrics.histogramObserve(requestTimer);
       } else {
         response.getWriter().println("{}");
       }

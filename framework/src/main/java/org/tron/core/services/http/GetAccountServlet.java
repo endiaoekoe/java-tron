@@ -3,9 +3,13 @@ package org.tron.core.services.http;
 import com.alibaba.fastjson.JSONObject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Account;
 
@@ -45,6 +49,10 @@ public class GetAccountServlet extends RateLimiterServlet {
   private void fillResponse(boolean visible, Account account, HttpServletResponse response)
       throws Exception {
     Account reply = wallet.getAccount(account);
+    Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+            MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetAccount");
     Util.printAccount(reply, response, visible);
+    Metrics.histogramObserve(requestTimer);
+
   }
 }

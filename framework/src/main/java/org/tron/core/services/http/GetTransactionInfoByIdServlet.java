@@ -5,10 +5,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.TransactionInfo;
@@ -38,6 +42,8 @@ public class GetTransactionInfoByIdServlet extends RateLimiterServlet {
       TransactionInfo reply = wallet
           .getTransactionInfoById(ByteString.copyFrom(ByteArray.fromHexString(input)));
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetTransactionInfoById");
         response.getWriter().println(convertLogAddressToTronAddress(reply, visible));
       } else {
         response.getWriter().println("{}");
@@ -54,7 +60,10 @@ public class GetTransactionInfoByIdServlet extends RateLimiterServlet {
       JsonFormat.merge(params.getParams(), build, params.isVisible());
       TransactionInfo reply = wallet.getTransactionInfoById(build.getValue());
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetTransactionInfoById");
         response.getWriter().println(convertLogAddressToTronAddress(reply, params.isVisible()));
+        Metrics.histogramObserve(requestTimer);
       } else {
         response.getWriter().println("{}");
       }

@@ -3,9 +3,13 @@ package org.tron.core.services.http;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.db.Manager;
 
 
@@ -19,7 +23,10 @@ public class GetBurnTrxServlet extends RateLimiterServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
       long value = manager.getDynamicPropertiesStore().getBurnTrxAmount();
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetBurnTrx");
       response.getWriter().println("{\"burnTrxAmount\": " + value + "}");
+      Metrics.histogramObserve(requestTimer);
     } catch (Exception e) {
       logger.error("", e);
       try {

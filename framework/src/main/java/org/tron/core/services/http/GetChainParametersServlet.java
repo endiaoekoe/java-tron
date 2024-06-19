@@ -2,9 +2,13 @@ package org.tron.core.services.http;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 
 
@@ -18,7 +22,10 @@ public class GetChainParametersServlet extends RateLimiterServlet {
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
     try {
       boolean visible = Util.getVisible(request);
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetChainParameters");
       response.getWriter().println(JsonFormat.printToString(wallet.getChainParameters(), visible));
+      Metrics.histogramObserve(requestTimer);
     } catch (Exception e) {
       Util.processError(e, response);
     }

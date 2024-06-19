@@ -4,10 +4,14 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Block;
@@ -45,7 +49,11 @@ public class GetBlockByIdServlet extends RateLimiterServlet {
       throws IOException {
     Block reply = wallet.getBlockById(blockId);
     if (reply != null) {
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetBlockById");
       response.getWriter().println(Util.printBlock(reply, visible));
+      Metrics.histogramObserve(requestTimer);
+
     } else {
       response.getWriter().println("{}");
     }

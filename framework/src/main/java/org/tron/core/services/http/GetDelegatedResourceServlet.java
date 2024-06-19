@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.DelegatedResourceList;
 import org.tron.api.GrpcAPI.DelegatedResourceMessage;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 
@@ -52,7 +56,10 @@ public class GetDelegatedResourceServlet extends RateLimiterServlet {
       HttpServletResponse response) throws IOException {
     DelegatedResourceList reply = wallet.getDelegatedResource(fromAddress, toAddress);
     if (reply != null) {
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetDelegatedResource");
       response.getWriter().println(JsonFormat.printToString(reply, visible));
+      Metrics.histogramObserve(requestTimer);
     } else {
       response.getWriter().println("{}");
     }

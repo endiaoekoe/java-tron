@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.PaginatedMessage;
 import org.tron.api.GrpcAPI.ProposalList;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 
 @Component
@@ -47,7 +51,10 @@ public class GetPaginatedProposalListServlet extends RateLimiterServlet {
       throws IOException {
     ProposalList reply = wallet.getPaginatedProposalList(offset, limit);
     if (reply != null) {
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetPaginatedProposalList");
       response.getWriter().println(JsonFormat.printToString(reply, visible));
+      Metrics.histogramObserve(requestTimer);
     } else {
       response.getWriter().println("{}");
     }

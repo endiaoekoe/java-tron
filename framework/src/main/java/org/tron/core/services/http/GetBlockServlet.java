@@ -6,11 +6,15 @@ import com.google.common.base.Strings;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BlockReq;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Block;
 
@@ -72,7 +76,11 @@ public class GetBlockServlet extends RateLimiterServlet {
     try {
       Block reply = wallet.getBlock(request);
       if (reply != null) {
+        Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+                MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetBlock");
         response.getWriter().println(Util.printBlock(reply, visible));
+        Metrics.histogramObserve(requestTimer);
+
       } else {
         response.getWriter().println("{}");
       }

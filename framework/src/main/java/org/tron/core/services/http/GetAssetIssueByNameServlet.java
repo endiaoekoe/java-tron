@@ -5,9 +5,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.protobuf.ByteString;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import io.prometheus.client.Histogram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.prometheus.MetricKeys;
+import org.tron.common.prometheus.Metrics;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
 import org.tron.protos.contract.AssetIssueContractOuterClass.AssetIssueContract;
@@ -53,7 +57,11 @@ public class GetAssetIssueByNameServlet extends RateLimiterServlet {
     AssetIssueContract reply =
         wallet.getAssetIssueByName(address);
     if (reply != null) {
+      Histogram.Timer requestTimer = Metrics.histogramStartTimer(
+              MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetAssetIssueByName");
       response.getWriter().println(JsonFormat.printToString(reply, visible));
+      Metrics.histogramObserve(requestTimer);
+
     } else {
       response.getWriter().println("{}");
     }
