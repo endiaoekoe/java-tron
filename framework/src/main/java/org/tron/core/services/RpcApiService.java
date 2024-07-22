@@ -100,6 +100,7 @@ import org.tron.core.metrics.MetricsApiService;
 import org.tron.core.services.filter.LiteFnQueryGrpcInterceptor;
 import org.tron.core.services.ratelimiter.RateLimiterInterceptor;
 import org.tron.core.services.ratelimiter.RpcApiAccessInterceptor;
+import org.tron.core.services.ratelimiter.PrometheusInterceptor;
 import org.tron.core.utils.TransactionUtil;
 import org.tron.core.zen.address.DiversifierT;
 import org.tron.core.zen.address.IncomingViewingKey;
@@ -196,7 +197,8 @@ public class RpcApiService extends RpcService {
   private WalletSolidityApi walletSolidityApi = new WalletSolidityApi();
   @Getter
   private MonitorApi monitorApi = new MonitorApi();
-
+  @Autowired
+  private PrometheusInterceptor prometheusInterceptor;
   private final String executorName = "rpc-full-executor";
 
   @Override
@@ -251,6 +253,11 @@ public class RpcApiService extends RpcService {
 
       // add lite fullnode query interceptor
       serverBuilder.intercept(liteFnQueryGrpcInterceptor);
+
+      // add prometheus interceptor
+      if (parameter.isMetricsPrometheusEnable()) {
+        serverBuilder.intercept(prometheusInterceptor);
+      }
 
       if (parameter.isRpcReflectionServiceEnable()) {
         serverBuilder.addService(ProtoReflectionService.newInstance());
