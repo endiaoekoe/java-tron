@@ -13,6 +13,7 @@ import com.beust.jcommander.ParameterDescription;
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import io.grpc.Internal;
 import io.grpc.internal.GrpcUtil;
 import io.grpc.netty.NettyServerBuilder;
 import java.io.File;
@@ -975,6 +976,8 @@ public class Args extends CommonParameter {
 
     PARAMETER.rateLimiterInitialization = getRateLimiterFromConfig(config);
 
+    PARAMETER.batchRequestLimit = getBatchRequestLimitMap(config);
+
     PARAMETER.changedDelegation =
         config.hasPath(Constant.COMMITTEE_CHANGED_DELEGATION) ? config
             .getInt(Constant.COMMITTEE_CHANGED_DELEGATION) : 0;
@@ -1261,6 +1264,19 @@ public class Args extends CommonParameter {
       initialization.setRpcMap(list2);
     }
     return initialization;
+  }
+
+  private static Map<String,Integer> getBatchRequestLimitMap(final com.typesafe.config.Config config){
+    Map<String, Integer> batchRequestLimitParams= new HashMap<>();
+    if (config.hasPath(Constant.HTTP_BATCHREQUESTLIMIT)) {
+      int getblockbylimitnext = config.getInt(Constant.NODE_HTTP_BATCHREQUESTLIMIT_GETBLOCKBYLIMITNEXT);
+      int getassetissuelist  = config.getInt(Constant.NODE_HTTP_BATCHREQUESTLIMIT_GETASSETISSUELIST);
+      int getblockbylatestnum  = config.getInt(Constant.NODE_HTTP_BATCHREQUESTLIMIT_GETBLOCKBYLATESTNUM);
+      batchRequestLimitParams.put("getblockbylimitnext",getblockbylimitnext);
+      batchRequestLimitParams.put("getassetissuelist",getassetissuelist);
+      batchRequestLimitParams.put("getblockbylatestnum",getblockbylatestnum);
+    }
+    return batchRequestLimitParams;
   }
 
   public static List<InetSocketAddress> getInetSocketAddress(

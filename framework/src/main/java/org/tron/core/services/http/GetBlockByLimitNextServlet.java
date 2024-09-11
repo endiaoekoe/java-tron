@@ -1,6 +1,7 @@
 package org.tron.core.services.http;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,6 +14,7 @@ import org.tron.api.GrpcAPI.BlockList;
 import org.tron.common.prometheus.MetricKeys;
 import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
+import org.tron.core.config.args.Args;
 
 
 @Component
@@ -46,8 +48,17 @@ public class GetBlockByLimitNextServlet extends RateLimiterServlet {
   private void fillResponse(boolean visible, long startNum, long endNum,
       HttpServletResponse response)
       throws IOException {
-    if (endNum > 0 && endNum > startNum && endNum - startNum <= BLOCK_LIMIT_NUM) {
-      BlockList reply = wallet.getBlocksByLimitNext(startNum, endNum - startNum);
+
+    Map<String,Integer> batchRequestLimit= Args.getInstance().batchRequestLimit;
+    Integer getblockbylimitnextMaxSize = batchRequestLimit.get("getblockbylimitnext");
+    Long batchSize =endNum - startNum;
+    if (endNum > 0 && endNum > startNum && batchSize<= BLOCK_LIMIT_NUM) {
+      if(getblockbylimitnextMaxSize!=null){
+        if(endNum-startNum>getblockbylimitnextMaxSize){
+          batchSize=Long.valueOf(getblockbylimitnextMaxSize);
+        }
+      }
+      BlockList reply = wallet.getBlocksByLimitNext(startNum, batchSize);
       if (reply != null) {
         Histogram.Timer requestTimer = Metrics.histogramStartTimer(
                 MetricKeys.Histogram.HTTP_RES_DESERIALIZE_LATENCY, "GetBlockByLimitNext");
