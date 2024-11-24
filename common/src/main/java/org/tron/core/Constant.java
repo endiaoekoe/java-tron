@@ -140,6 +140,15 @@ public class Constant {
   public static final String NODE_JSONRPC_HTTP_PBFT_ENABLE = "node.jsonrpc.httpPBFTEnable";
   public static final String NODE_JSONRPC_HTTP_PBFT_PORT = "node.jsonrpc.httpPBFTPort";
 
+  public static final String NODE_HTTP_BATCHREQUESTLIMIT_GETBLOCKBYLIMITNEXT = "node.http.batchRequestLimit.getBlockByLimitNext";
+
+  public  static  final  String NODE_HTTP_BATCHREQUESTLIMIT_GETASSETISSUELIST= "node.http.batchRequestLimit.getAssetIssueList";
+
+  public  static  final  String NODE_HTTP_BATCHREQUESTLIMIT_GETBLOCKBYLATESTNUM= "node.http.batchRequestLimit.getBlockByLatestNum";
+
+  public static final String HTTP_BATCHREQUESTLIMIT = "http.batchRequestLimit";
+
+
   public static final String NODE_DISABLED_API_LIST = "node.disabledApi";
 
   public static final String NODE_RPC_THREAD = "node.rpc.thread";

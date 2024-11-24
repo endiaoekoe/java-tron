@@ -1,6 +1,7 @@
 package org.tron.core.services.http;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,6 +14,7 @@ import org.tron.api.GrpcAPI.NumberMessage;
 import org.tron.common.prometheus.MetricKeys;
 import org.tron.common.prometheus.Metrics;
 import org.tron.core.Wallet;
+import org.tron.core.config.args.Args;
 
 
 @Component
@@ -44,7 +46,14 @@ public class GetBlockByLatestNumServlet extends RateLimiterServlet {
 
   private void fillResponse(boolean visible, long num, HttpServletResponse response)
       throws IOException {
+    Map<String,Integer> batchRequestLimit= Args.getInstance().batchRequestLimit;
+    Integer getblockbylatestnumMaxSize = batchRequestLimit.get("getblockbylatestnum");
     if (num > 0 && num < BLOCK_LIMIT_NUM) {
+      if(getblockbylatestnumMaxSize!=null){
+        if(num>getblockbylatestnumMaxSize){
+          num=Long.valueOf(getblockbylatestnumMaxSize);
+        }
+      }
       BlockList reply = wallet.getBlockByLatestNum(num);
       if (reply != null) {
         Histogram.Timer requestTimer = Metrics.histogramStartTimer(
