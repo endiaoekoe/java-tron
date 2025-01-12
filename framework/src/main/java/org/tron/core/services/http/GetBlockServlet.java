@@ -72,7 +72,7 @@ public class GetBlockServlet extends RateLimiterServlet {
     try {
       Block reply = wallet.getBlock(request);
       if (reply != null) {
-        response.getWriter().println(Util.printBlock(reply, visible));
+        response.getWriter().println(JsonFormat.printToString(reply, visible));
       } else {
         response.getWriter().println("{}");
       }
