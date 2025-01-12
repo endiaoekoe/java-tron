@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.core.Wallet;
+import org.tron.core.services.cacheprovider.LatestBlockProvider;
 import org.tron.protos.Protocol.Block;
 
 @Component
@@ -13,15 +14,20 @@ import org.tron.protos.Protocol.Block;
 public class GetNowBlockServlet extends RateLimiterServlet {
 
   @Autowired
-  private Wallet wallet;
+  private final LatestBlockProvider blockProvider;
 
-  @Override
+    public GetNowBlockServlet(LatestBlockProvider blockProvider) {
+        this.blockProvider = blockProvider;
+    }
+
+
+    @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
       boolean visible = Util.getVisible(request);
-      Block reply = wallet.getNowBlock();
+      Block reply = blockProvider.getLatestBlock();
       if (reply != null) {
-        response.getWriter().println(Util.printBlock(reply, visible));
+        response.getWriter().println(JsonFormat.printToString(reply, visible));
       } else {
         response.getWriter().println("{}");
       }
