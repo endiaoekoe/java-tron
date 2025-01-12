@@ -1648,7 +1648,7 @@ public class Wallet {
 
     BandwidthProcessor processor = new BandwidthProcessor(chainBaseManager);
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
-    assetIssueCapsuleList.stream()
+    assetIssueCapsuleList.parallelStream()
         .filter(assetIssueCapsule -> assetIssueCapsule.getName().equals(assetName))
         .forEach(
             issueCapsule -> {
