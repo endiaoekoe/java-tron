@@ -1592,7 +1592,7 @@ public class Wallet {
           chainBaseManager.getAssetIssueV2Store().getAllAssetIssues();
       AssetIssueList.Builder builder = AssetIssueList.newBuilder();
       assetIssueCapsuleList
-          .stream()
+          .parallelStream()
           .filter(assetIssueCapsule -> assetIssueCapsule.getName().equals(assetName))
           .forEach(
               issueCapsule -> {
