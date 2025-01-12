@@ -2646,11 +2646,12 @@ public class Wallet {
         Block block = chainBaseManager.getBlockByNum(blockNum).getInstance();
 
         if (block != null) {
+          boolean isECKeyCryptoEngine =CommonParameter.getInstance()
+                  .isECKeyCryptoEngine();
           List<Transaction> listTransaction = block.getTransactionsList();
           for (Transaction transaction : listTransaction) {
             TransactionInfoCapsule transactionInfoCapsule = dbManager.getTransactionHistoryStore()
-                .get(Sha256Hash.hash(CommonParameter.getInstance()
-                    .isECKeyCryptoEngine(), transaction.getRawData().toByteArray()));
+                .get(Sha256Hash.hash(isECKeyCryptoEngine, transaction.getRawData().toByteArray()));
 
             if (transactionInfoCapsule != null) {
               transactionInfoList.addTransactionInfo(transactionInfoCapsule.getInstance());

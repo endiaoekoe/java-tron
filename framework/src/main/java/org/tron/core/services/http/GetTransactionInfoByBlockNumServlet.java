@@ -22,22 +22,17 @@ public class GetTransactionInfoByBlockNumServlet extends RateLimiterServlet {
   @Autowired
   private Wallet wallet;
 
-  private JSONObject convertLogAddressToTronAddress(TransactionInfo transactionInfo,
-      boolean visible) {
-    if (visible) {
-      List<Log> newLogList = Util.convertLogAddressToTronAddress(transactionInfo);
-      transactionInfo = transactionInfo.toBuilder().clearLog().addAllLog(newLogList).build();
-    }
-
-    return JSONObject.parseObject(JsonFormat.printToString(transactionInfo, visible));
-  }
 
   private String printTransactionInfoList(TransactionInfoList list, boolean selfType) {
     JSONArray jsonArray = new JSONArray();
     for (TransactionInfo transactionInfo : list.getTransactionInfoList()) {
-      jsonArray.add(convertLogAddressToTronAddress(transactionInfo, selfType));
+      if (visible) {
+        List<Log> newLogList = Util.convertLogAddressToTronAddressParallel(transactionInfo);
+        transactionInfo = transactionInfo.toBuilder().clearLog().addAllLog(newLogList).build();
+      }
+      jsonArray.add(transactionInfo);
     }
-    return jsonArray.toJSONString();
+    return JsonFormat.printToString(jsonArray,selfType);
   }
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
