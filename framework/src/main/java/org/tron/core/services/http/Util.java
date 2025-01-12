@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -579,6 +580,77 @@ public class Util {
         logBuilder
             .setAddress(ByteString.copyFrom(TransactionTrace.convertToTronAddress(newAddress)));
       }
+
+      newLogList.add(logBuilder.build());
+    }
+
+    return newLogList;
+  }
+
+  /**
+   * Parallel version for processing large number of logs
+   */
+  public static List<Log> convertLogAddressToTronAddressParallel(TransactionInfo transactionInfo) {
+    List<Log> logList = transactionInfo.getLogList();
+    int size = logList.size();
+    if (size == 0) {
+      return Collections.emptyList();
+    }
+
+    // Use sequential processing for small lists
+    if (size < 1000) {
+      return convertLogAddressToTronAddressSequential(logList);
+    }
+
+    // Parallel processing for large lists
+    return logList.parallelStream()
+            .map(log -> {
+              ByteString address = log.getAddress();
+              byte[] oldAddress = address.toByteArray();
+
+              if (oldAddress.length == 0 || oldAddress.length > 20) {
+                return log;
+              }
+
+              Log.Builder logBuilder = Log.newBuilder()
+                      .setData(log.getData())
+                      .addAllTopics(log.getTopicsList());
+
+              byte[] newAddress = new byte[20];
+              System.arraycopy(oldAddress, 0, newAddress, 20 - oldAddress.length, oldAddress.length);
+              logBuilder.setAddress(ByteString.copyFrom(TransactionTrace.convertToTronAddress(newAddress)));
+
+              return logBuilder.build();
+            })
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * Helper method for sequential processing of logs
+   *
+   * @param logList List of logs to process
+   * @return List of processed logs
+   */
+  private static List<Log> convertLogAddressToTronAddressSequential(List<Log> logList) {
+    List<Log> newLogList = new ArrayList<>(logList.size());
+    byte[] newAddress = new byte[20];
+
+    for (Log log : logList) {
+      ByteString address = log.getAddress();
+      byte[] oldAddress = address.toByteArray();
+
+      if (oldAddress.length == 0 || oldAddress.length > 20) {
+        newLogList.add(log);
+        continue;
+      }
+
+      Log.Builder logBuilder = Log.newBuilder()
+              .setData(log.getData())
+              .addAllTopics(log.getTopicsList());
+
+      Arrays.fill(newAddress, (byte) 0);
+      System.arraycopy(oldAddress, 0, newAddress, 20 - oldAddress.length, oldAddress.length);
+      logBuilder.setAddress(ByteString.copyFrom(TransactionTrace.convertToTronAddress(newAddress)));
 
       newLogList.add(logBuilder.build());
     }
