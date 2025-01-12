@@ -41,8 +41,10 @@ public class TransactionStore extends TronStoreWithRevoking<TransactionCapsule> 
   private TransactionCapsule getTransactionFromBlockStore(byte[] key, long blockNum) {
     List<BlockCapsule> blocksList = blockStore.getLimitNumber(blockNum, 1);
     if (blocksList.size() != 0) {
-      for (TransactionCapsule e : blocksList.get(0).getTransactions()) {
-        if (e.getTransactionId().equals(Sha256Hash.wrap(key))) {
+      Sha256Hash targetHash = Sha256Hash.wrap(key);
+      BlockCapsule block = blocksList.get(0);
+      for (TransactionCapsule e : block.getTransactions()) {
+        if (e.getTransactionId().equals(targetHash)) {
           return e;
         }
       }
