@@ -52,6 +52,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -184,16 +186,7 @@ import org.tron.core.exception.ZksnarkException;
 import org.tron.core.net.TronNetDelegate;
 import org.tron.core.net.TronNetService;
 import org.tron.core.net.message.adv.TransactionMessage;
-import org.tron.core.store.AccountIdIndexStore;
-import org.tron.core.store.AccountStore;
-import org.tron.core.store.AccountTraceStore;
-import org.tron.core.store.BalanceTraceStore;
-import org.tron.core.store.ContractStore;
-import org.tron.core.store.DynamicPropertiesStore;
-import org.tron.core.store.MarketOrderStore;
-import org.tron.core.store.MarketPairPriceToOrderStore;
-import org.tron.core.store.MarketPairToPriceStore;
-import org.tron.core.store.StoreFactory;
+import org.tron.core.store.*;
 import org.tron.core.utils.TransactionUtil;
 import org.tron.core.vm.program.Program;
 import org.tron.core.zen.ShieldedTRC20ParametersBuilder;
@@ -1401,7 +1394,7 @@ public class Wallet {
 
     BandwidthProcessor processor = new BandwidthProcessor(chainBaseManager);
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
-    assetIssueCapsuleList.stream()
+    assetIssueCapsuleList.parallelStream()
         .filter(assetIssueCapsule -> assetIssueCapsule.getOwnerAddress().equals(accountAddress))
         .forEach(
             issueCapsule -> {
@@ -1410,6 +1403,54 @@ public class Wallet {
             });
 
     return builder.build();
+  }
+
+  public AssetIssueList getAssetIssueByAccountParallel(ByteString accountAddress) {
+    // Early validation
+    if (accountAddress == null || accountAddress.isEmpty()) {
+      return AssetIssueList.getDefaultInstance();
+    }
+
+    // Get stores once
+    DynamicPropertiesStore dynamicStore = chainBaseManager.getDynamicPropertiesStore();
+    AssetIssueStore assetIssueStore = chainBaseManager.getAssetIssueStore();
+    AssetIssueV2Store assetIssueV2Store = chainBaseManager.getAssetIssueV2Store();
+
+    // Get final store
+    AssetIssueStore finalStore = getAssetIssueStoreFinal(dynamicStore, assetIssueStore, assetIssueV2Store);
+
+    // Get all asset issues
+    List<AssetIssueCapsule> allAssetIssues = finalStore.getAllAssetIssues();
+    if (allAssetIssues.isEmpty()) {
+      return AssetIssueList.getDefaultInstance();
+    }
+
+    // Use parallel processing only for large lists
+    if (allAssetIssues.size() < 1000) {
+      return getAssetIssueByAccount(accountAddress);
+    }
+
+    // Create processor once
+    BandwidthProcessor processor = new BandwidthProcessor(chainBaseManager);
+
+    // Process assets in parallel
+    ConcurrentLinkedQueue<Protocol.AssetIssueContract> matchingAssets = new ConcurrentLinkedQueue<>();
+
+    allAssetIssues.parallelStream()
+            .filter(assetIssueCapsule -> accountAddress.equals(assetIssueCapsule.getOwnerAddress()))
+            .forEach(assetIssueCapsule -> {
+              processor.updateUsage(assetIssueCapsule);
+              matchingAssets.offer(assetIssueCapsule.getInstance());
+            });
+
+    // Build result
+    if (matchingAssets.isEmpty()) {
+      return AssetIssueList.getDefaultInstance();
+    }
+
+    return AssetIssueList.newBuilder()
+            .addAllAssetIssue(matchingAssets)
+            .build();
   }
 
   private Map<String, Long> setAssetNetLimit(Map<String, Long> assetNetLimitMap,
