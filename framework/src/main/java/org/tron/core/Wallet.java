@@ -738,7 +738,7 @@ public class Wallet {
     ProposalList.Builder builder = ProposalList.newBuilder();
     List<ProposalCapsule> proposalCapsuleList =
         chainBaseManager.getProposalStore().getAllProposals();
-    proposalCapsuleList
+    proposalCapsuleList.parallelStream()
         .forEach(proposalCapsule -> builder.addProposals(proposalCapsule.getInstance()));
     return builder.build();
   }
