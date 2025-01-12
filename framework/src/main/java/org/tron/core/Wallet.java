@@ -2710,7 +2710,7 @@ public class Wallet {
   public NodeList listNodes() {
     NodeList.Builder nodeListBuilder = NodeList.newBuilder();
     if (!Args.getInstance().p2pDisable) {
-      TronNetService.getP2pService().getConnectableNodes().forEach(node -> {
+      TronNetService.getP2pService().getConnectableNodes().parallelStream().forEach(node -> {
         nodeListBuilder.addNodes(Node.newBuilder().setAddress(
             Address.newBuilder()
                 .setHost(ByteString
