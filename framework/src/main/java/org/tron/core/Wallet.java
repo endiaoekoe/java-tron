@@ -1350,7 +1350,7 @@ public class Wallet {
 
     getAssetIssueStoreFinal(chainBaseManager.getDynamicPropertiesStore(),
         chainBaseManager.getAssetIssueStore(),
-        chainBaseManager.getAssetIssueV2Store()).getAllAssetIssues()
+        chainBaseManager.getAssetIssueV2Store()).getAllAssetIssues().parallelStream()
         .forEach(
             issueCapsule -> {
               processor.updateUsage(issueCapsule);
