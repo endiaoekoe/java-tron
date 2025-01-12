@@ -932,7 +932,7 @@ public class Wallet {
             chainBaseManager.getExchangeStore(),
             chainBaseManager.getExchangeV2Store()).getAllExchanges();
 
-    exchangeCapsuleList
+    exchangeCapsuleList.parallelStream()
         .forEach(exchangeCapsule -> builder.addExchanges(exchangeCapsule.getInstance()));
     return builder.build();
   }
