@@ -16,10 +16,6 @@ public class GetNowBlockServlet extends RateLimiterServlet {
   @Autowired
   private LatestBlockProvider blockProvider;
 
-  public GetNowBlockServlet() {
-  }
-
-
     @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
