@@ -17,10 +17,6 @@ public class GetNowBlockOnPBFTServlet extends GetNowBlockServlet {
   @Autowired
   private WalletOnPBFT walletOnPBFT;
 
-  public GetNowBlockOnPBFTServlet(LatestBlockProvider blockProvider) {
-    super(blockProvider);
-  }
-
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     walletOnPBFT.futureGet(() -> super.doGet(request, response));

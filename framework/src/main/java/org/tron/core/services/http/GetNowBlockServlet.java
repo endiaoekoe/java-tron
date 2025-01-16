@@ -16,8 +16,7 @@ public class GetNowBlockServlet extends RateLimiterServlet {
   @Autowired
   private LatestBlockProvider blockProvider;
 
-  public GetNowBlockServlet(LatestBlockProvider blockProvider) {
-        this.blockProvider = blockProvider;
+  public GetNowBlockServlet() {
   }
 
 
