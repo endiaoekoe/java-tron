@@ -2,45 +2,48 @@ package org.tron.core.services.cacheprovider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.tron.core.Wallet;
 import org.tron.core.services.http.JsonFormat;
 import org.tron.protos.Protocol.Block;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Service
 public class LatestBlockProvider {
     private static final Logger logger = LoggerFactory.getLogger(LatestBlockProvider.class);
 
-    private final Wallet wallet;
-    private static volatile LatestBlockProvider instance;
+    @Autowired
+    private Wallet wallet;
 
-    // 使用ConcurrentHashMap替代Caffeine Cache
     private static final ConcurrentHashMap<String, BlockWrapper> localCache = new ConcurrentHashMap<>();
     private static final String LATEST_BLOCK_KEY = "LATEST_BLOCK";
-    private static volatile long lastBlockNum = 0;
-    private static volatile long lastUpdateTime = 0;
+    private static long lastBlockNum = 0;
+    private static long lastUpdateTime = 0;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    private LatestBlockProvider(Wallet wallet) {
-        this.wallet = wallet;
+    // Remove singleton pattern related code
+    public LatestBlockProvider() {
+    }
+
+    @PostConstruct
+    private void init() {
         startBlockFreshnessChecker();
     }
 
-    public static LatestBlockProvider getInstance(Wallet wallet) {
-        if (instance == null) {
-            synchronized (LatestBlockProvider.class) {
-                if (instance == null) {
-                    instance = new LatestBlockProvider(wallet);
-                }
-            }
-        }
-        return instance;
+    @PreDestroy
+    public void shutdown() {
+        scheduler.shutdown();
     }
 
+    // Rest of the code remains the same, just remove static modifiers
     private static class BlockWrapper {
         final Block block;
         final long timestamp;
@@ -73,6 +76,7 @@ public class LatestBlockProvider {
         }
     }
 
+    // Rest of the methods remain the same
     public String getLatestBlockJson(boolean visible) {
         try {
             BlockWrapper blockWrapper = getLatestBlockWrapper();
@@ -152,7 +156,6 @@ public class LatestBlockProvider {
             }
         }, 3, 3, TimeUnit.SECONDS);
 
-        // 添加清理过期缓存的定时任务
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 BlockWrapper current = localCache.get(LATEST_BLOCK_KEY);
@@ -163,9 +166,5 @@ public class LatestBlockProvider {
                 logger.error("Error in cache cleanup", e);
             }
         }, 1, 1, TimeUnit.SECONDS);
-    }
-
-    public void shutdown() {
-        scheduler.shutdown();
     }
 }
