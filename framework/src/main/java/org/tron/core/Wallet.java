@@ -1434,7 +1434,7 @@ public class Wallet {
     BandwidthProcessor processor = new BandwidthProcessor(chainBaseManager);
 
     // Process assets in parallel
-    ConcurrentLinkedQueue<Protocol.AssetIssueContract> matchingAssets = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<AssetIssueContract> matchingAssets = new ConcurrentLinkedQueue<>();
 
     allAssetIssues.parallelStream()
             .filter(assetIssueCapsule -> accountAddress.equals(assetIssueCapsule.getOwnerAddress()))

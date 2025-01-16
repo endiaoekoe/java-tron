@@ -14,11 +14,11 @@ import org.tron.protos.Protocol.Block;
 public class GetNowBlockServlet extends RateLimiterServlet {
 
   @Autowired
-  private final LatestBlockProvider blockProvider;
+  private LatestBlockProvider blockProvider;
 
-    public GetNowBlockServlet(LatestBlockProvider blockProvider) {
+  public GetNowBlockServlet(LatestBlockProvider blockProvider) {
         this.blockProvider = blockProvider;
-    }
+  }
 
 
     @Override

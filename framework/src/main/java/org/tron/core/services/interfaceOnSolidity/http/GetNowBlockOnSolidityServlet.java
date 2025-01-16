@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.core.services.cacheprovider.LatestBlockProvider;
 import org.tron.core.services.http.GetNowBlockServlet;
 import org.tron.core.services.interfaceOnSolidity.WalletOnSolidity;
 
@@ -15,6 +16,10 @@ public class GetNowBlockOnSolidityServlet extends GetNowBlockServlet {
 
   @Autowired
   private WalletOnSolidity walletOnSolidity;
+
+  public GetNowBlockOnSolidityServlet(LatestBlockProvider blockProvider) {
+    super(blockProvider);
+  }
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     walletOnSolidity.futureGet(() -> super.doGet(request, response));

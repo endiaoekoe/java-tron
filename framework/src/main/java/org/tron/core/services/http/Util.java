@@ -20,10 +20,7 @@ import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -215,79 +212,56 @@ public class Util {
   }
 
   public static JSONObject printTransactionToJSON(Transaction transaction, boolean selfType) {
-    // Convert transaction to JSON string only once
-    String transactionJsonStr = JsonFormat.printToString(transaction, selfType);
-    JSONObject jsonTransaction = JSONObject.parseObject(transactionJsonStr);
-
-    // Get raw data once
-    Transaction.raw rawData = transaction.getRawData().toBuilder();
-    List<Contract> contractList = rawData.getContractList();
-
-    // Pre-allocate array with known size
-    JSONArray contracts = new JSONArray(contractList.size());
-
-    // Prepare common objects
-    JSONObject parameter = new JSONObject(2); // Initial capacity of 2 for known fields
-    JSONObject jsonContract = new JSONObject(3); // Initial capacity of 3 for known fields
-
-    // Process contracts
-    for (Contract contract : contractList) {
+    JSONObject jsonTransaction = JSONObject
+        .parseObject(JsonFormat.printToString(transaction, selfType));
+    JSONArray contracts = new JSONArray();
+    transaction.getRawData().getContractList().stream().forEach(contract -> {
       try {
         JSONObject contractJson = null;
         Any contractParameter = contract.getParameter();
-        ContractType contractType = contract.getType();
-
-        // Process contract based on type
-        if (contractType == ContractType.CreateSmartContract) {
-          CreateSmartContract deployContract = contractParameter.unpack(CreateSmartContract.class);
-          contractJson = JSONObject.parseObject(JsonFormat.printToString(deployContract, selfType));
-
-          // Generate contract address
-          byte[] ownerAddress = deployContract.getOwnerAddress().toByteArray();
-          byte[] contractAddress = generateContractAddress(transaction, ownerAddress);
-          jsonTransaction.put(CONTRACT_ADDRESS, ByteArray.toHexString(contractAddress));
-        } else {
-          Class<?> clazz = TransactionFactory.getContract(contractType);
-          if (clazz != null) {
-            contractJson = JSONObject.parseObject(
-                    JsonFormat.printToString(contractParameter.unpack(clazz), selfType)
-            );
-          }
+        switch (contract.getType()) {
+          case CreateSmartContract:
+            CreateSmartContract deployContract = contractParameter
+                .unpack(CreateSmartContract.class);
+            contractJson = JSONObject
+                .parseObject(JsonFormat.printToString(deployContract, selfType));
+            byte[] ownerAddress = deployContract.getOwnerAddress().toByteArray();
+            byte[] contractAddress = generateContractAddress(transaction, ownerAddress);
+            jsonTransaction.put(CONTRACT_ADDRESS, ByteArray.toHexString(contractAddress));
+            break;
+          default:
+            Class clazz = TransactionFactory.getContract(contract.getType());
+            if (clazz != null) {
+              contractJson = JSONObject
+                  .parseObject(JsonFormat.printToString(contractParameter.unpack(clazz), selfType));
+            }
+            break;
         }
 
-        // Clear and reuse JSONObjects
-        parameter.clear();
+        JSONObject parameter = new JSONObject();
         parameter.put(VALUE, contractJson);
         parameter.put("type_url", contract.getParameterOrBuilder().getTypeUrl());
-
-        jsonContract.clear();
+        JSONObject jsonContract = new JSONObject();
         jsonContract.put(PARAMETER, parameter);
-        jsonContract.put("type", contractType);
-
-        int permissionId = contract.getPermissionId();
-        if (permissionId > 0) {
-          jsonContract.put(PERMISSION_ID, permissionId);
+        jsonContract.put("type", contract.getType());
+        if (contract.getPermissionId() > 0) {
+          jsonContract.put(PERMISSION_ID, contract.getPermissionId());
         }
-
-        contracts.add(new JSONObject(jsonContract)); // Create new instance to avoid reference issues
+        contracts.add(jsonContract);
       } catch (InvalidProtocolBufferException e) {
         logger.debug("InvalidProtocolBufferException: {}", e.getMessage());
       }
-    }
+    });
 
-    // Process raw data
-    byte[] rawDataBytes = rawData.toByteArray(); // Convert to byte array only once
-
-    JSONObject rawDataJson = JSONObject.parseObject(jsonTransaction.getString("raw_data"));
-    rawDataJson.put("contract", contracts);
-    jsonTransaction.put("raw_data", rawDataJson);
-
-    // Calculate hex strings
-    jsonTransaction.put("raw_data_hex", ByteArray.toHexString(rawDataBytes));
-    jsonTransaction.put("txID", ByteArray.toHexString(
-            Sha256Hash.hash(CommonParameter.getInstance().isECKeyCryptoEngine(), rawDataBytes)
-    ));
-
+    JSONObject rawData = JSONObject.parseObject(jsonTransaction.get("raw_data").toString());
+    rawData.put("contract", contracts);
+    jsonTransaction.put("raw_data", rawData);
+    String rawDataHex = ByteArray.toHexString(transaction.getRawData().toByteArray());
+    jsonTransaction.put("raw_data_hex", rawDataHex);
+    String txID = ByteArray.toHexString(Sha256Hash
+        .hash(CommonParameter.getInstance().isECKeyCryptoEngine(),
+            transaction.getRawData().toByteArray()));
+    jsonTransaction.put("txID", txID);
     return jsonTransaction;
   }
 
