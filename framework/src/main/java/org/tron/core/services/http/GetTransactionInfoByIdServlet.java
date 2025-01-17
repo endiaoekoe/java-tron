@@ -25,7 +25,7 @@ public class GetTransactionInfoByIdServlet extends RateLimiterServlet {
   private static String convertLogAddressToTronAddress(TransactionInfo transactionInfo,
       boolean visible) {
     if (visible) {
-      List<Log> newLogList = Util.convertLogAddressToTronAddress(transactionInfo);
+      List<Log> newLogList = Util.convertLogAddressToTronAddressParallel(transactionInfo);
       transactionInfo = transactionInfo.toBuilder().clearLog().addAllLog(newLogList).build();
     }
     return JsonFormat.printToString(transactionInfo, visible);

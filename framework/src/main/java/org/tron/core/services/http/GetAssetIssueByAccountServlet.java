@@ -45,7 +45,7 @@ public class GetAssetIssueByAccountServlet extends RateLimiterServlet {
 
   private void fillResponse(boolean visible, ByteString address, HttpServletResponse response)
       throws Exception {
-    AssetIssueList reply = wallet.getAssetIssueByAccount(address);
+    AssetIssueList reply = wallet.getAssetIssueByAccountParallel(address);
     if (reply != null) {
       response.getWriter().println(JsonFormat.printToString(reply, visible));
     } else {

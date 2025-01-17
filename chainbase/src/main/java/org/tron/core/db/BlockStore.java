@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,16 +50,23 @@ public class BlockStore extends TronStoreWithRevoking<BlockCapsule> {
   }
 
   private List<BlockCapsule> pack(Set<byte[]> values) {
-    List<BlockCapsule> blocks = new ArrayList<>();
-    for (byte[] bytes : values) {
-      try {
-        blocks.add(new BlockCapsule(bytes));
-      } catch (BadItemException e) {
-        logger.error("Find bad item: {}", e.getMessage());
-        // throw new TronDBException(e);
-      }
-    }
-    blocks.sort(Comparator.comparing(BlockCapsule::getNum));
+    // Pre-allocate capacity to avoid dynamic expansion
+    List<BlockCapsule> blocks = new ArrayList<>(values.size());
+
+    // Process using parallel stream for better performance
+    blocks = values.parallelStream()
+            .map(bytes -> {
+              try {
+                return new BlockCapsule(bytes);
+              } catch (BadItemException e) {
+                logger.error("Find bad item: {}", e.getMessage());
+                return null;
+              }
+            })
+            .filter(block -> block != null)
+            .sorted(Comparator.comparing(BlockCapsule::getNum))
+            .collect(Collectors.toList());
+
     return blocks;
   }
 }

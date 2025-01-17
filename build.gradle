@@ -18,6 +18,11 @@ subprojects {
     buildscript {
         repositories {
             mavenCentral()
+            maven {
+                url = uri("https://jcenter.bintray.com")
+            }
+            google()
+            gradlePluginPortal()
             maven { url 'https://jitpack.io' }
             maven {
                 url "https://plugins.gradle.org/m2/"
@@ -32,6 +37,11 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven {
+            url = uri("https://jcenter.bintray.com")
+        }
+        google()
+        gradlePluginPortal()
         maven { url 'https://repo.spring.io/plugins-release' }
         maven { url 'https://jitpack.io' }
     }

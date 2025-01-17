@@ -45,7 +45,7 @@ public class GetBlockByIdServlet extends RateLimiterServlet {
       throws IOException {
     Block reply = wallet.getBlockById(blockId);
     if (reply != null) {
-      response.getWriter().println(Util.printBlock(reply, visible));
+      response.getWriter().println(JsonFormat.printToString(reply, visible));
     } else {
       response.getWriter().println("{}");
     }

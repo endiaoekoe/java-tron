@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.tron.core.services.cacheprovider.LatestBlockProvider;
 
 @Slf4j
 public class HttpServletTest {

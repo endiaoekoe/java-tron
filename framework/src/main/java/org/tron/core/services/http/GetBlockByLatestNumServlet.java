@@ -43,7 +43,7 @@ public class GetBlockByLatestNumServlet extends RateLimiterServlet {
     if (num > 0 && num < BLOCK_LIMIT_NUM) {
       BlockList reply = wallet.getBlockByLatestNum(num);
       if (reply != null) {
-        response.getWriter().println(Util.printBlockList(reply, visible));
+        response.getWriter().println(JsonFormat.printToString(reply, visible));
         return;
       }
     }
